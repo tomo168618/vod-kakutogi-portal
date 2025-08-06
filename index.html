@@ -1,11 +1,82 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<title>格闘技VODポータル MVP</title>
+  <meta charset="UTF-8" />
+  <title>格闘技VODポータル MVP</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+    }
+    h1 {
+      color: #d62828;
+    }
+    .rss-item {
+      background: #fff;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .rss-item a {
+      color: #1d3557;
+      font-weight: bold;
+      text-decoration: none;
+    }
+    .rss-item p {
+      margin: 5px 0 0;
+      color: #333;
+    }
+  </style>
 </head>
 <body>
-<h1>格闘技VODまとめサイト MVP</h1>
-<p>UFC・RIZIN・ABEMA・U-NEXTなどの配信情報をまとめています。</p>
+  <h1>格闘技VODまとめポータル</h1>
+  <p>UFC・RIZIN・パンクラス・Bellatorなどの最新ニュースと試合情報をまとめています。</p>
+
+  <div id="rss-container">読み込み中...</div>
+
+  <script>
+    async function loadRSS() {
+      const urls = [
+        "https://www.gongkakutougi.com/feed/",   // ゴング格闘技
+        "https://www.sherdog.com/rss/news.xml", // Sherdog
+        "https://www.mmafighting.com/rss/current", // MMA Fighting
+      ];
+      let html = "";
+
+      for (const url of urls) {
+        try {
+          const apiUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+          const res = await fetch(apiUrl);
+          const data = await res.json();
+          const parser = new DOMParser();
+          const xml = parser.parseFromString(data.contents, "text/xml");
+          const items = xml.querySelectorAll("item");
+
+          items.forEach((item, i) => {
+            if (i < 3) { // 各RSSから最新3件だけ
+              const title = item.querySelector("title")?.textContent;
+              const link = item.querySelector("link")?.textContent;
+              const desc = item.querySelector("description")?.textContent;
+
+              html += `
+                <div class="rss-item">
+                  <a href="${link}" target="_blank">${title}</a>
+                  <p>${desc || ""}</p>
+                </div>
+              `;
+            }
+          });
+        } catch (e) {
+          html += `<p>⚠️ 読み込み失敗: ${url}</p>`;
+        }
+      }
+
+      document.getElementById("rss-container").innerHTML = html || "記事がありません。";
+    }
+
+    loadRSS();
+  </script>
 </body>
 </html>
